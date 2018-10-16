@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Tic Tac Math</title>
+    <link rel="stylesheet" href="./css/style.css">
+</head>
+<body>
+    <div id="app">
+
+        <div id="menang-panel" v-if="pemenang != null">
+            <h1>Pemenangnya Adalah :</h1>
+
+            <div class="pion-o" v-if="pemenang == 'o'">
+                <img src="./image/o.png">
+            </div>
+            <div class="pion-x" v-if="pemenang == 'x'">
+                <img src="./image/x.png">
+            </div>
+        </div>
+
+        <div id="number-board">
+            <div class="row" v-for="(row, index_row) in board">
+                <div :class="{'col': true, 'focus': (col == hasil_operasi && xoboard[index_row][index_col] == ''), unfocus: (col != hasil_operasi && hasil_operasi > 0 && xoboard[index_row][index_col] == ''), 'col-o': (xoboard[index_row][index_col] == 'o') , 'col-x': (xoboard[index_row][index_col] == 'x')}" v-for="(col, index_col) in row" @click="chooseNumberBoard(index_row, index_col)">
+                    <span v-if="xoboard[index_row][index_col] === ''">
+                        {{ col }}
+                    </span>
+                    <span v-else>
+                        <img :src="'image/' + xoboard[index_row][index_col] + '.png'" />
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <div id="tools-board">
+            <h3>Giliran</h3>
+            <div class="pion-o" v-if="turn == 'o'">
+                <img src="./image/o.png">
+            </div>
+            <div class="pion-x" v-if="turn == 'x'">
+                <img src="./image/x.png">
+            </div>
+
+            <div class="last-number">
+                {{ last_number }}
+            </div>
+            <div class="operator-pad">
+                <div @click="chooseOperator('+')" :class="{focus: choosed_operator == '+', unfocus: (choosed_operator != '+' && choosed_operator != null)}">+</div>
+                <div @click="chooseOperator('x')" :class="{focus: choosed_operator == 'x', unfocus: (choosed_operator != 'x' && choosed_operator != null)}">x</div>
+            </div>
+            <div class="number-pad">
+                <div v-for="i in 9" @click="chooseNumber(i)" :class="{unfocus: numberPadUnfocus(i)}">
+                    {{ i }}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="./js/vue.js"></script>
+    <script>
+        let app = new Vue({
+            el: '#app',
+            data: {
+                boardSize: 10,
+                board: [],
+                xoboard: [],
+                index: [],
+                turn: 'x',
+                last_number: 0,
+                choosed_operator: null,
+                hasil_operasi: null,
+                pemenang: null
+            },
+
+            mounted: function () {
+                this.generateNumberBoard()
+                this.index = this.generateRandomIndex()
+            },
+
+            methods: {
+                generateNumberBoard: function () {
+                    for (let row = 1; row <= this.boardSize; row++) {
+                        this.board.push([])
+                        this.xoboard.push([])
+
+                        for (let col = 1; col <= this.boardSize; col++) {
+                            // this.board[row - 1].push(1)
+                            this.board[row - 1].push(this.random(2, 9))
+                            this.xoboard[row - 1].push('')
+                        }
+                    }
+
+                    for (let index of this.generateRandomIndex(80)) {
+                        let row = index[0]
+                        let col = index[1]
+                        let num = this.board[row][col]
+
+                        // atas
+                        if (row > 0) {
+                            if (this.board[row - 1][col] < 10 && num < 10) {
+                                this.board[row - 1][col] *= num
+                            }
+                        }
+
+                        // bawah
+                        if (row < this.boardSize - 1) {
+                            if (this.board[row + 1][col] < 10 && num < 10) {
+                                this.board[row + 1][col] *= num
+                            }
+                        }
+
+                        // kiri
+                        if (col > 0) {
+                            if (this.board[row][col - 1] < 10 && num < 10) {
+                                this.board[row][col - 1] *= num
+                            }
+                        }
+
+                        // bawah
+                        if (col < this.boardSize - 1) {
+                            if (this.board[row][col + 1] < 10 && num < 10) {
+                                this.board[row][col + 1] *= num
+                            }
+                        }  
+                    }
+                },
+
+                generateRandomIndex: function (count) {
+                    let rand = []
+
+                    for (let i = 1; i <= count; i++) {
+                        let temp = [this.random(0, 9), this.random(0, 9)]
+
+                        while (rand.filter(function (value, index) {
+                            return value[0] == temp[0] && value[1] == temp[1]
+                        }).length > 0) {
+                            temp = [this.random(0, 9), this.random(0, 9)]
+                        }
+
+                        rand.push(temp)
+                    }
+
+                    return rand
+                },
+
+                random: function (min = 1, max) {
+                    return Math.floor(Math.random() * (max - min + 1)) + min
+                },
+
+                chooseNumber: function (number) {
+                    if (this.choosed_operator == null && this.last_number > 0)
+                        return
+
+                    if (this.choosed_operator == '+')
+                        this.hasil_operasi = this.last_number + number
+                    else
+                        this.hasil_operasi = this.last_number * number
+                    
+                    this.last_number = number
+                    this.choosed_operator = null
+                },
+
+                chooseOperator: function (operator) {
+                    if (this.choosed_operator != null)
+                        return 
+
+                    this.choosed_operator = operator
+                },
+
+                chooseNumberBoard: function (row, col) {
+                    if (this.hasil_operasi == null || this.xoboard[row][col] !== '' || this.hasil_operasi != this.board[row][col])
+                        return
+
+                    this.xoboard[row][col] = this.turn
+                    this.turn = this.turn === 'x' ? 'o' : 'x'
+                    this.hasil_operasi = null
+                    this.cekPemenang()
+                    this.$forceUpdate()
+                },
+
+                numberFactor: function (num) {
+                    var half = Math.floor(num / 2), // Ensures a whole number <= num.
+                        factors = [],
+                        i, j;
+
+                    // Determine out increment value for the loop and starting point.
+                    num % 2 === 0 ? (i = 2, j = 1) : (i = 3, j = 2);
+
+                    for (i; i <= half; i += j) {
+                        if (num % 1 === 0)
+                            factors.push(i)
+                    }
+
+                    return factors
+                },
+
+                cekPemenang: function () {
+                    let menang = false
+
+                    for (let row = 0; row <= 9; row++) {
+                        for (let col = 0; col <= 9; col++) {
+                            if (this.xoboard[row][col] == '')
+                                continue
+                            
+                            menang = this.cekMenangKanan(row, col)
+
+                            if (!menang)
+                                menang = this.cekMenangAtas(row, col)
+
+                            if (!menang)
+                                menang = this.cekMenangDiagonalKanan(row, col)
+
+                            if (!menang)
+                                menang = this.cekMenangDiagonalKiri(row, col)
+
+                            if (menang) {
+                                this.pemenang = this.xoboard[row][col]
+                                break
+                            }
+                        }
+
+                        if (menang)
+                            break
+                    }
+                },
+
+                cekMenangKanan: function (row, col) {
+                    if (col + 3 > 9)
+                        return false
+
+                    let count = 0
+                    for (let i = col; i <= col + 3; i++) {
+                        if (this.xoboard[row][i] == this.xoboard[row][col])
+                            count++
+                    }
+
+                    return count > 3
+                },
+
+                cekMenangAtas: function (row, col) {
+                    if (row - 3 < 0)
+                        return false
+
+                    let count = 0
+                    for (let i = row - 3; i <= row; i++) {
+                        if (this.xoboard[i][col] == this.xoboard[row][col])
+                            count++
+                    }
+
+                    return count > 3
+                },
+                
+                cekMenangDiagonalKanan: function (row, col) {
+                    if (row - 3 < 0 || col + 3 > 9)
+                        return false
+
+                    let count = 0
+                    for (let i = 0; i <= 3; i++) {
+                        if (this.xoboard[row - i][col + i] == this.xoboard[row][col])
+                            count++
+                    }
+
+                    return count > 3
+                },
+
+                cekMenangDiagonalKiri: function (row, col) {
+                    if (row - 3 < 0 || col - 3 < 0)
+                        return false
+
+                    let count = 0
+                    for (let i = 0; i <= 3; i++) {
+                        if (this.xoboard[row - i][col - i] == this.xoboard[row][col])
+                            count++
+                    }
+
+                    return count > 3
+                },
+
+                numberPadUnfocus: function (number) {
+                    return this.last_number > 0 && this.choosed_operator == null
+                }
+            }
+        })
+    </script>
+</body>
+</html>
